@@ -258,6 +258,9 @@ def handle_callback(q):
             parts = data.split(":")
             v = parts[1]
             region = parts[2].lower() if len(parts) > 2 else None
+            if not region:
+                edit(chat_id, message_id, f"🌍 <b>{html.escape(VARIANTS[v]['name'])}</b>\n\nSelect the region to query:", region_keyboard(v))
+                return
             edit(chat_id, message_id, "⏳ <b>Querying the official OTA service…</b>\n\nThis can take a few seconds.", [
                 [button("⬅️ Cancel", f"variant:{v}")]
             ])
