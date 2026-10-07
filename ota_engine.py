@@ -49,16 +49,19 @@ def _key(v, region):
     return (v, region)
 
 def _query(mod, v, region, ota_prefix):
+    base_model = VARIANTS[v]["cn_model"] if region == "cn" else VARIANTS[v]["model"]
+    custom = base_model if region == "cn" else None
     cfg = mod.QueryConfig(
         ota_version=ota_prefix,
-        model=VARIANTS[v]["model"],
+        model=base_model,
         region=region,
         mode="manual",
         guid="0" * 64,
-        has_custom_model=True,
+        has_custom_model=bool(custom),
         original_link=1,
     )
-    processed, model = mod.process_ota_version(ota_prefix, region, "0", "0", VARIANTS[v]["model"])
+    query_prefix = ota_prefix.replace(VARIANTS[v]["model"], base_model, 1) if region == "cn" else ota_prefix
+    processed, model = mod.process_ota_version(query_prefix, region, "0", "0", custom)
     cfg.ota_version = processed
     cfg.model = model
     return mod.query_update(cfg)
