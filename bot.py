@@ -252,8 +252,14 @@ def handle_callback(q):
 
         if data.startswith("lookup:"):
             v = data.split(":", 1)[1]
-            SESSIONS[chat_id] = {"variant": v, "await_version": True}
-            send(chat_id, f"🔎 <b>Version lookup — {html.escape(VARIANTS[v]['name'])}</b>\n\nSend the full OTA version, for example:\n<code>RMX3561_11.F.38_2380_202501081908</code>\n\nI will query the official service for that exact build.")
+            edit(chat_id, message_id, f"🔎 <b>Version lookup — {html.escape(VARIANTS[v]['name'])}</b>\n\nFirst select the region:", region_keyboard(v))
+            SESSIONS[chat_id] = {"variant": v, "await_region": True}
+            return
+
+        if data.startswith("lookup_region:"):
+            _, v, region = data.split(":")
+            SESSIONS[chat_id] = {"variant": v, "region": region, "await_version": True}
+            send(chat_id, f"🔎 <b>Version lookup — {html.escape(VARIANTS[v]['name'])} / {html.escape(dict(REGIONS[v]).get(region, region.upper()))}</b>\n\nSend the full OTA version, for example:\n<code>RMX3561_11.F.38_2380_202501081908</code>\n\nI will query the official service for that exact build.") 
             return
 
         if data.startswith("guide:"):
@@ -299,7 +305,7 @@ def handle_message(message):
     if session.get("await_version") and text and not text.startswith("/"):
         v = session["variant"]
         SESSIONS[chat_id] = {"variant": v}
-        region = "in" if "3561" in text.upper() or "3563" in text.upper() else "in"
+        region = session.get("region", "in")
         send(chat_id, "⏳ <b>Checking that exact OTA version…</b>")
         try:
             result = get_version(v, region, text)
