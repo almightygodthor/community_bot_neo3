@@ -2,14 +2,18 @@ name: Deploy GT Neo 3 OTA Bot
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Validate bot
         run: |
           python3 -m py_compile bot.py ota_engine.py
@@ -18,9 +22,11 @@ jobs:
           json.load(open("data/downgrades.json"))
           print("configuration OK")
           PY
+
       - name: Deploy to Deta Space
         uses: neobrains/space-pipe@v0.5
         with:
-          space_access_token: ${{ secrets.BOT_SPACE_ACCESS_TOKEN }}
-          space_project_id: ${{ secrets.BOT_SPACE_PROJECT_ID }}
-          space_path: .
+          access_token: ${{ secrets.BOT_SPACE_ACCESS_TOKEN }}
+          project_id: ${{ secrets.BOT_SPACE_PROJECT_ID }}
+          project_directory: .
+          space_push: true
