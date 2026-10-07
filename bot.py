@@ -137,6 +137,20 @@ def region_keyboard(v):
     return rows
 
 
+def lookup_region_keyboard(v):
+    rows = []
+    current = []
+    for code, name in REGIONS[v]:
+        current.append(button(name, f"lookup_region:{v}:{code}"))
+        if len(current) == 2:
+            rows.append(current)
+            current = []
+    if current:
+        rows.append(current)
+    rows.append([button("⬅️ Back", f"variant:{v}")])
+    return rows
+
+
 def format_variant(v):
     x = VARIANTS[v]
     return f"<b>{html.escape(x['name'])}</b>\nModel: <code>{x['model']}</code>\nChina model: <code>{x['cn_model']}</code>\nCodename: <code>{x['codename']}</code>"
@@ -252,7 +266,7 @@ def handle_callback(q):
 
         if data.startswith("lookup:"):
             v = data.split(":", 1)[1]
-            edit(chat_id, message_id, f"🔎 <b>Version lookup — {html.escape(VARIANTS[v]['name'])}</b>\n\nFirst select the region:", region_keyboard(v))
+            edit(chat_id, message_id, f"🔎 <b>Version lookup — {html.escape(VARIANTS[v]['name'])}</b>\n\nFirst select the region:", lookup_region_keyboard(v))
             SESSIONS[chat_id] = {"variant": v, "await_region": True}
             return
 
