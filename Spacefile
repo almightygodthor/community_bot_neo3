@@ -1,0 +1,9 @@
+v: 0
+micros:
+  - name: neo3-ota-bot
+    src: .
+    engine: python3.12
+    primary: true
+    run: python bot.py
+    public_routes:
+      - /
