@@ -426,8 +426,7 @@ def handle_message(message):
              home_keyboard())
         return
 
-    send(chat_id, "Use <b>/stockota</b> to open the GT Neo 3 OTA menu.", [[button("Open Stock OTA", "home:main")]])
-
+    # Ignore normal group/private messages; the bot responds only to /stockota.\n    return\n
 
 def schedule_next_worker():
     if not GH_TOKEN:
