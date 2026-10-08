@@ -309,7 +309,7 @@ def handle_message(message):
     chat_id = message["chat"]["id"]
     text = (message.get("text") or "").strip()
 
-    if text.startswith("/start"):
+    if text.split()[0].split("@")[0].lower() == "/stockota":
         SESSIONS[chat_id] = {}
         send(chat_id,
              f"👋 <b>Welcome to {html.escape(BOT_NAME)}</b>\n\n"
@@ -334,13 +334,13 @@ def handle_message(message):
             send(chat_id, f"⚠️ <b>Lookup failed</b>\n\n<code>{html.escape(str(e))}</code>")
         return
 
-    send(chat_id, "Use <b>/start</b> to open the menu.", [[button("🏠 Open Menu", "home:main")]])
+    send(chat_id, "Use <b>/stockota</b> to open the GT Neo 3 OTA menu.", [[button("📦 Open Stock OTA", "home:main")]])
 
 
 def poll():
     offset = 0
     tg("deleteWebhook", {"drop_pending_updates": True})
-    tg("setMyCommands", {"commands": [{"command": "start", "description": "Open the GT Neo 3 OTA menu"}]})
+    tg("setMyCommands", {"commands": [{"command": "stockota", "description": "Open the GT Neo 3 Stock OTA menu"}]})
 
     while True:
         try:
