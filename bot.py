@@ -6,6 +6,9 @@ import html
 import logging
 import os
 import time
+import json
+import urllib.parse
+import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 
@@ -19,6 +22,11 @@ from ota_engine import (
 )
 
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
+GH_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GH_REPO = os.getenv("GITHUB_REPOSITORY", "almightygodthor/community_bot_neo3")
+GH_REF = os.getenv("GITHUB_REF_NAME") or os.getenv("GITHUB_REF", "main").removeprefix("refs/heads/")
+BOT_WORKFLOW = "telegram-bot.yml"
+WORKER_SECONDS = 60 * 60 * 5 + 40 * 60
 BOT_NAME = os.getenv("BOT_NAME", "GT Neo 3 OTA")
 VERSION = os.getenv("BOT_VERSION", "1.0.0")
 PORT = int(os.getenv("PORT", "8080"))
@@ -337,14 +345,44 @@ def handle_message(message):
     send(chat_id, "Use <b>/stockota</b> to open the GT Neo 3 OTA menu.", [[button("📦 Open Stock OTA", "home:main")]])
 
 
+def schedule_next_worker():
+    if not GH_TOKEN:
+        LOG.error("GITHUB_TOKEN is not available; cannot schedule next worker")
+        return
+    url = f"https://api.github.com/repos/{GH_REPO}/actions/workflows/{urllib.parse.quote(BOT_WORKFLOW, safe='')}/dispatches"
+    payload = json.dumps({"ref": GH_REF}).encode()
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        method="POST",
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {GH_TOKEN}",
+            "X-GitHub-Api-Version": "2026-03-10",
+            "Content-Type": "application/json",
+            "User-Agent": "GTNeo3-OTA-GitHub-Worker",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as response:
+            if response.status not in (200, 201, 202, 204):
+                raise RuntimeError(f"GitHub returned HTTP {response.status}")
+        LOG.info("Queued next Telegram worker")
+    except Exception:
+        LOG.exception("Failed to queue next Telegram worker")
+
+
 def poll():
     offset = 0
+    deadline = time.monotonic() + WORKER_SECONDS
     tg("deleteWebhook", {"drop_pending_updates": True})
     tg("setMyCommands", {"commands": [{"command": "stockota", "description": "Open the GT Neo 3 Stock OTA menu"}]})
 
-    while True:
+    while time.monotonic() < deadline:
+        remaining = max(1, int(deadline - time.monotonic()))
+        timeout = min(25, remaining)
         try:
-            updates = tg("getUpdates", {"timeout": 25, "offset": offset}, timeout=35)
+            updates = tg("getUpdates", {"timeout": timeout, "offset": offset}, timeout=timeout + 10)
             for u in updates:
                 offset = u["update_id"] + 1
                 if "callback_query" in u:
@@ -354,6 +392,8 @@ def poll():
         except Exception:
             LOG.exception("polling failure")
             time.sleep(5)
+
+    schedule_next_worker()
 
 
 if __name__ == "__main__":
