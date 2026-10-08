@@ -117,7 +117,7 @@ def button(text, data):
 
 def home_keyboard():
     return [
-        [button("📱 GT Neo 3 80W", "variant:80"), button("⚡ GT Neo 3 150W", "variant:150")],
+        [button("GT Neo 3 • 80W", "variant:80"), button("GT Neo 3 • 150W", "variant:150")],
         [button("🔄 Refresh", "home:refresh"), button("ℹ️ About", "home:about")],
     ]
 
@@ -172,14 +172,11 @@ def format_variant(v):
 def format_size(value):
     try:
         size = float(value)
-        units = ("B", "KB", "MB", "GB", "TB")
-        for unit in units:
-            if size < 1024 or unit == "TB":
-                return f"{size:.2f} {unit}" if unit != "B" else f"{size:.0f} {unit}"
-            size /= 1024
+        if size <= 0:
+            return "N/A"
+        return f"{size / 1_000_000_000:.2f} GB"
     except (TypeError, ValueError):
         return "N/A"
-    return "N/A"
 
 
 def format_result(result, v, region, generation=None):
@@ -187,19 +184,23 @@ def format_result(result, v, region, generation=None):
     rname = dict(REGIONS[v]).get(region, region.upper())
     lines = [
         f"<b>{html.escape(x['name'])}</b>",
-        f"──────────────",
+        "──────────────",
         f"{html.escape(rname)}",
-        "",
-        f"Version   <code>{html.escape(result.get('ota_version', 'N/A'))}</code>",
-        f"Software  <code>{html.escape(result.get('version', 'N/A'))}</code>",
-        f"Patch     <code>{html.escape(result.get('security_patch', 'N/A'))}</code>",
     ]
     if generation:
         family = {"3": "RUI 3 • Android 12", "4": "RUI 4 • Android 13", "5": "RUI 5 • Android 14"}[generation]
-        lines.insert(2, f"<b>{family}</b>")
-        lines.insert(3, "")
+        lines.append(f"<b>{family}</b>")
+    lines += [
+        "",
+        "<b>Build</b>",
+        f"<code>{html.escape(result.get('ota_version', 'N/A'))}</code>",
+        "",
+        f"Software  <code>{html.escape(result.get('version', 'N/A'))}</code>",
+        f"Patch     <code>{html.escape(result.get('security_patch', 'N/A'))}</code>",
+    ]
     if result.get("published_time"):
-        lines.append(f"Released  <code>{html.escape(result['published_time'])}</code>")
+        released = str(result["published_time"]).split(" ")[0]
+        lines.append(f"Released  <code>{html.escape(released)}</code>")
     if result.get("size"):
         lines.append(f"Size      <code>{html.escape(format_size(result['size']))}</code>")
     lines += ["", "Official stock OTA"]
@@ -295,7 +296,7 @@ def handle_callback(q):
             edit(chat_id, message_id,
                  f"ℹ️ <b>{html.escape(BOT_NAME)} {html.escape(VERSION)}</b>\n\n"
                  "Built for the realme GT Neo 3 80W / 150W community.\n"
-                 "• Official OTA query\n• Region-aware model mapping\n• Refreshable download links\n• Version lookup\n• Downgrade catalog\n\n"
+                 "• Official OTA query\n• Region-aware model mapping\n• RUI generation lookup\n• Refreshable download links\n• Downgrade catalog\n\n"
                  "Dynamic download URLs can expire; use <b>Refresh</b> to obtain a fresh link.",
                  [[button("⬅️ Back", "home:main")]])
             return
