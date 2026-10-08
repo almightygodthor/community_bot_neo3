@@ -186,25 +186,6 @@ def format_size(value):
         return "N/A"
 
 
-def _box_line(text, width=30):
-    text = str(text)
-    if len(text) > width:
-        text = text[: max(0, width - 1)] + "…"
-    return f"│ {text.ljust(width)} │"
-
-
-def _box_wrapped(label, value, width=30):
-    import textwrap
-
-    value = str(value)
-    prefix = f"{label:<9}"
-    available = max(1, width - len(prefix))
-    chunks = textwrap.wrap(value, width=available, break_long_words=True, break_on_hyphens=False) or [""]
-    lines = [f"{prefix}{chunks[0]}"]
-    lines.extend(f"{'':9}{chunk}" for chunk in chunks[1:])
-    return [_box_line(line, width) for line in lines]
-
-
 def format_result(result, v, region, generation=None):
     x = VARIANTS[v]
     rname = dict(REGIONS[v]).get(region, region.upper())
@@ -216,44 +197,36 @@ def format_result(result, v, region, generation=None):
             "5": "RUI 5 • Android 14",
         }[generation]
 
-    build = result.get("ota_version", "N/A")
-    software = result.get("version", "N/A")
-    patch = result.get("security_patch", "N/A")
-    released = str(result.get("published_time", "N/A")).split(" ")[0]
-    size = format_size(result.get("size")) if result.get("size") else "N/A"
+    build = html.escape(str(result.get("ota_version", "N/A")))
+    software = html.escape(str(result.get("version", "N/A")))
+    patch = html.escape(str(result.get("security_patch", "N/A")))
+    released = html.escape(str(result.get("published_time", "N/A")).split(" ")[0])
+    size = html.escape(format_size(result.get("size")) if result.get("size") else "N/A")
 
-    width = 30
-    border = "─" * (width + 2)
     lines = [
-        f"┌{border}┐",
-        _box_line(x["name"], width),
-        f"├{border}┤",
-        _box_line(rname, width),
+        f"<b>{html.escape(x['name'])}</b>",
+        "━━━━━━━━━━━━━━━━",
+        f"🌍 <b>{html.escape(rname)}</b>",
     ]
 
     if family:
-        lines.append(_box_line(family, width))
+        lines.append(f"<b>{html.escape(family)}</b>")
 
     lines.extend([
-        f"├{border}┤",
-        _box_line("BUILD", width),
-    ])
-    lines.extend(_box_wrapped("", build, width))
-
-    lines.extend([
-        f"├{border}┤",
-    ])
-    lines.extend(_box_wrapped("SOFTWARE", software, width))
-    lines.extend(_box_wrapped("PATCH", patch, width))
-    lines.extend(_box_wrapped("RELEASED", released, width))
-    lines.extend(_box_wrapped("SIZE", size, width))
-    lines.extend([
-        f"├{border}┤",
-        _box_line("OFFICIAL STOCK OTA", width),
-        f"└{border}┘",
+        "",
+        "<b>BUILD</b>",
+        f"<code>{build}</code>",
+        "",
+        f"<b>SOFTWARE</b>  <code>{software}</code>",
+        f"<b>PATCH</b>     <code>{patch}</code>",
+        f"<b>RELEASED</b>  <code>{released}</code>",
+        f"<b>SIZE</b>      <code>{size}</code>",
+        "",
+        "━━━━━━━━━━━━━━━━",
+        "<b>OFFICIAL STOCK OTA</b>",
     ])
 
-    return "<pre>" + "\n".join(lines) + "</pre>\n\n<b>🚨 Contains preloader_raw.img</b>"
+    return "\n".join(lines) + "\n\n<b>🚨 Contains preloader_raw.img</b>"
 
 
 def result_keyboard(result, v, region, generation=None):
