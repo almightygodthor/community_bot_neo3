@@ -105,9 +105,9 @@ def get_generation(v, region, generation):
     mod = _load()
     family = RUI_FAMILIES[generation]
     try:
-        result = _query(mod, v, region, f"{VARIANTS[v]["model"]}_11.{family["suffix"]}")
+        result = _query(mod, v, region, f"{VARIANTS[v]['model']}_11.{family['suffix']}")
         item = _convert(result, v, region)
-        return item or {"error": f"No {family["name"]} package was returned for this region."}
+        return item or {"error": f"No {family['name']} package was returned for this region."}
     except Exception as e:
         return {"error": str(e)}
 
