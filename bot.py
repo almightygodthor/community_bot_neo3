@@ -397,7 +397,8 @@ def handle_message(message):
     chat_id = message["chat"]["id"]
     text = (message.get("text") or "").strip()
 
-    if text.split()[0].split("@")[0].lower() == "/stockota":
+    command = text.split(maxsplit=1)[0].split("@")[0].lower() if text else ""
+    if command == "/stockota":
         SESSIONS[chat_id] = {}
         send(chat_id,
              f"👋 <b>Welcome to {html.escape(BOT_NAME)}</b>\n\n"
