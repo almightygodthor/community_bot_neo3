@@ -1,10 +1,36 @@
 {
   "80": {
     "name": "realme GT Neo 3 80W",
-    "regions": {}
+    "packages": [
+      {
+        "title": "RUI 4 Rollback",
+        "region": "Global / India",
+        "version": "RMX3561_13.1.0.611(EX01)",
+        "url": "https://download.c.realme.com/flash/Rollbackpack/realme_GT_Neo3/UI4.0/RMX3561_11_C_OTA_1240_all_ws109R_00011011_IN.zip"
+      },
+      {
+        "title": "RUI 5 → RUI 4",
+        "region": "China",
+        "version": "RMX3560_11_C_OTA_1240",
+        "url": "https://rbp01.realme.net/GT_Neo3/UI4.0/RMX3560_11_C_OTA_1240_all_CDSeWu_CN.zip"
+      }
+    ]
   },
   "150": {
     "name": "realme GT Neo 3 150W",
-    "regions": {}
+    "packages": [
+      {
+        "title": "RUI 4 Rollback",
+        "region": "Global / India",
+        "version": "RMX3563_13.1.0.611(EX01)",
+        "url": "https://download.c.realme.com/flash/Rollbackpack/realme_GT_Neo3_150W/UI4.0/RMX3563_11_C_OTA_1240_all_myivFh_00011011_IN.zip"
+      },
+      {
+        "title": "RUI 5 → RUI 4",
+        "region": "China",
+        "version": "RMX3562_11_C_OTA_1240",
+        "url": "https://rbp01.realme.net/GT_Neo3_150W/UI4.0/RMX3562_11_C_OTA_1240_all_0ypstj_CN.zip"
+      }
+    ]
   }
 }
