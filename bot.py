@@ -218,6 +218,37 @@ def result_keyboard(result, v, region, generation=None):
     return rows
 
 
+def run_generation(chat_id, message_id, v, region, generation):
+    key = f"{v}:{region}:rui{generation}"
+    now = time.time()
+    if key in CACHE and now - CACHE[key][0] < 300:
+        result = CACHE[key][1]
+    else:
+        result = get_generation(v, region, generation)
+        CACHE[key] = (now, result)
+
+    if not result:
+        edit(chat_id, message_id, "No matching stock OTA was returned.", [
+            [button("Try Again", f"generation_run:{v}:{generation}:{region}")],
+            [button("Back", f"variant:{v}")],
+        ])
+        return
+
+    if isinstance(result, dict) and result.get("error"):
+        edit(chat_id, message_id, f"<b>OTA query failed</b>\n\n<code>{html.escape(result['error'])}</code>", [
+            [button("Try Again", f"generation_run:{v}:{generation}:{region}")],
+            [button("Back", f"variant:{v}")],
+        ])
+        return
+
+    edit(
+        chat_id,
+        message_id,
+        format_result(result, v, region, generation),
+        result_keyboard(result, v, region, generation),
+    )
+
+
 def run_latest(chat_id, message_id, v, region=None):
     key = f"{v}:{region or 'all'}"
     now = time.time()
@@ -293,26 +324,31 @@ def handle_callback(q):
             Thread(target=run_latest, args=(chat_id, message_id, v, region), daemon=True).start()
             return
 
-        if data.startswith("lookup:"):
-            v = data.split(":", 1)[1]
-            edit(chat_id, message_id, f"🔎 <b>Version lookup — {html.escape(VARIANTS[v]['name'])}</b>\n\nFirst select the region:", lookup_region_keyboard(v))
-            SESSIONS[chat_id] = {"variant": v, "await_region": True}
+        if data.startswith("generation:"):
+            _, v, generation = data.split(":")
+            labels = {"3": "RUI 3 • Android 12", "4": "RUI 4 • Android 13", "5": "RUI 5 • Android 14"}
+            edit(
+                chat_id,
+                message_id,
+                f"<b>{html.escape(labels[generation])}</b>\n\n"
+                f"{html.escape(VARIANTS[v]['name'])}\n"
+                "Select your region. The bot will fetch the latest matching build automatically.",
+                generation_region_keyboard(v, generation),
+            )
             return
 
-        if data.startswith("lookup_region:"):
-            _, v, region = data.split(":")
-            SESSIONS[chat_id] = {"variant": v, "region": region, "await_version": True}
-            send(chat_id, f"🔎 <b>Version lookup — {html.escape(VARIANTS[v]['name'])} / {html.escape(dict(REGIONS[v]).get(region, region.upper()))}</b>\n\nSend the full OTA version, for example:\n<code>RMX3561_11.F.38_2380_202501081908</code>\n\nI will query the official service for that exact build.") 
-            return
-
-        if data.startswith("guide:"):
-            v = data.split(":", 1)[1]
-            edit(chat_id, message_id,
-                 f"📚 <b>Version guide</b>\n\n"
-                 f"{html.escape(VARIANTS[v]['name'])} uses the official OTA naming families such as <code>_11.A</code>, <code>_11.C</code> and <code>_11.F</code>.\n"
-                 "Use <b>Latest OTA</b> for the newest queryable build, or <b>Version Lookup</b> for an exact historical version.\n\n"
-                 "The bot does not invent historical URLs; it only presents links returned by the OTA source.",
-                 [[button("🔎 Version Lookup", f"lookup:{v}")], [button("⬅️ Back", f"variant:{v}")]])
+        if data.startswith("generation_run:"):
+            _, v, generation, region = data.split(":")
+            labels = {"3": "RUI 3 • Android 12", "4": "RUI 4 • Android 13", "5": "RUI 5 • Android 14"}
+            edit(
+                chat_id,
+                message_id,
+                f"<b>{html.escape(labels[generation])}</b>\n"
+                f"{html.escape(dict(REGIONS[v]).get(region, region.upper()))}\n\n"
+                "Fetching the latest matching stock OTA…",
+                [[button("Cancel", f"variant:{v}")]],
+            )
+            Thread(target=run_generation, args=(chat_id, message_id, v, region, generation), daemon=True).start()
             return
 
         if data.startswith("down:"):
@@ -344,23 +380,7 @@ def handle_message(message):
              home_keyboard())
         return
 
-    session = SESSIONS.get(chat_id, {})
-    if session.get("await_version") and text and not text.startswith("/"):
-        v = session["variant"]
-        SESSIONS[chat_id] = {"variant": v}
-        region = session.get("region", "in")
-        send(chat_id, "⏳ <b>Checking that exact OTA version…</b>")
-        try:
-            result = get_version(v, region, text)
-            if result.get("error"):
-                send(chat_id, f"⚠️ <b>Lookup failed</b>\n\n<code>{html.escape(result['error'])}</code>", [[button("🔎 Try another", f"lookup:{v}")], [button("⬅️ Back", f"variant:{v}")]])
-            else:
-                send(chat_id, format_result(result, v, region), result_keyboard(result, v, region))
-        except Exception as e:
-            send(chat_id, f"⚠️ <b>Lookup failed</b>\n\n<code>{html.escape(str(e))}</code>")
-        return
-
-    send(chat_id, "Use <b>/stockota</b> to open the GT Neo 3 OTA menu.", [[button("📦 Open Stock OTA", "home:main")]])
+    send(chat_id, "Use <b>/stockota</b> to open the GT Neo 3 OTA menu.", [[button("Open Stock OTA", "home:main")]])
 
 
 def schedule_next_worker():
