@@ -39,6 +39,13 @@ SESSIONS = {}
 CACHE = {}
 LOG = logging.getLogger("neo3bot")
 
+DOWNGRADE_FILE = os.path.join(os.path.dirname(__file__), "data", "downgrades.json")
+try:
+    with open(DOWNGRADE_FILE, "r", encoding="utf-8") as fh:
+        DOWNGRADES = json.load(fh)
+except (OSError, json.JSONDecodeError):
+    DOWNGRADES = {}
+
 
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -354,11 +361,29 @@ def handle_callback(q):
 
         if data.startswith("down:"):
             v = data.split(":", 1)[1]
-            edit(chat_id, message_id,
-                 f"⬇️ <b>Downgrade packages — {html.escape(VARIANTS[v]['name'])}</b>\n\n"
-                 "The downgrade catalog is prepared in the bot, but the actual region/build links are not populated yet.\n\n"
-                 "Once the community downgrade links are provided, they will appear here with the same button-based UI.",
-                 [[button("🔄 Refresh", f"down:{v}")], [button("⬅️ Back", f"variant:{v}")]])
+            packages = DOWNGRADES.get(v, {}).get("packages", [])
+            rows = []
+            lines = [
+                f"<b>Downgrade packages — {html.escape(VARIANTS[v]['name'])}</b>",
+                "",
+                "Direct links are provided below. The bot does not fetch or validate these files.",
+            ]
+            for package in packages:
+                title = html.escape(package.get("title", "Downgrade package"))
+                region = html.escape(package.get("region", ""))
+                version = html.escape(package.get("version", ""))
+                lines.append(f"\n<b>{title}</b>\n{region}\n<code>{version}</code>")
+                url = package.get("url", "")
+                if url.startswith("http"):
+                    rows.append([{"text": package.get("title", "Download"), "url": url}])
+            if not packages:
+                lines = [
+                    f"<b>Downgrade packages — {html.escape(VARIANTS[v]['name'])}</b>",
+                    "",
+                    "No downgrade packages are configured.",
+                ]
+            rows.append([button("Back", f"variant:{v}"), button("Home", "home:main")])
+            edit(chat_id, message_id, "\n".join(lines), rows)
             return
     except Exception as e:
         LOG.exception("callback failed")
