@@ -18,7 +18,7 @@ from ota_engine import (
     VARIANTS,
     REGIONS,
     get_latest,
-    get_version,
+    get_generation,
 )
 
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -124,10 +124,12 @@ def home_keyboard():
 
 def variant_keyboard(v):
     return [
-        [button("📦 Latest OTA", f"latest:{v}"), button("🌍 Regions", f"regions:{v}")],
-        [button("🔎 Version Lookup", f"lookup:{v}"), button("📚 Version Guide", f"guide:{v}")],
-        [button("⬇️ Downgrades", f"down:{v}")],
-        [button("🏠 Home", "home:main")],
+        [button("Latest OTA", f"latest:{v}"), button("Regions", f"regions:{v}")],
+        [button("RUI 3 • Android 12", f"generation:{v}:3")],
+        [button("RUI 4 • Android 13", f"generation:{v}:4")],
+        [button("RUI 5 • Android 14", f"generation:{v}:5")],
+        [button("Downgrades", f"down:{v}")],
+        [button("Home", "home:main")],
     ]
 
 
@@ -145,58 +147,74 @@ def region_keyboard(v):
     return rows
 
 
-def lookup_region_keyboard(v):
+def generation_region_keyboard(v, generation):
     rows = []
     current = []
     for code, name in REGIONS[v]:
-        current.append(button(name, f"lookup_region:{v}:{code}"))
+        current.append(button(name, f"generation_run:{v}:{generation}:{code}"))
         if len(current) == 2:
             rows.append(current)
             current = []
     if current:
         rows.append(current)
-    rows.append([button("⬅️ Back", f"variant:{v}")])
+    rows.append([button("Back", f"variant:{v}")])
     return rows
 
 
 def format_variant(v):
     x = VARIANTS[v]
-    return f"<b>{html.escape(x['name'])}</b>\nModel: <code>{x['model']}</code>\nChina model: <code>{x['cn_model']}</code>\nCodename: <code>{x['codename']}</code>"
+    return (
+        f"<b>{html.escape(x['name'])}</b>\n"
+        f"Model: <code>{x['model']}</code>  •  China: <code>{x['cn_model']}</code>"
+    )
 
 
-def format_result(result, v, region):
+def format_size(value):
+    try:
+        size = float(value)
+        units = ("B", "KB", "MB", "GB", "TB")
+        for unit in units:
+            if size < 1024 or unit == "TB":
+                return f"{size:.2f} {unit}" if unit != "B" else f"{size:.0f} {unit}"
+            size /= 1024
+    except (TypeError, ValueError):
+        return "N/A"
+    return "N/A"
+
+
+def format_result(result, v, region, generation=None):
     x = VARIANTS[v]
     rname = dict(REGIONS[v]).get(region, region.upper())
     lines = [
-        f"<b>{html.escape(x['name'])}</b> • {html.escape(rname)}",
+        f"<b>{html.escape(x['name'])}</b>",
+        f"──────────────",
+        f"{html.escape(rname)}",
         "",
-        f"📦 <b>OTA:</b> <code>{html.escape(result['ota_version'])}</code>",
-        f"📱 <b>Software:</b> {html.escape(result.get('version','N/A'))}",
-        f"🔐 <b>Security patch:</b> {html.escape(result.get('security_patch','N/A'))}",
+        f"Version   <code>{html.escape(result.get('ota_version', 'N/A'))}</code>",
+        f"Software  <code>{html.escape(result.get('version', 'N/A'))}</code>",
+        f"Patch     <code>{html.escape(result.get('security_patch', 'N/A'))}</code>",
     ]
+    if generation:
+        family = {"3": "RUI 3 • Android 12", "4": "RUI 4 • Android 13", "5": "RUI 5 • Android 14"}[generation]
+        lines.insert(2, f"<b>{family}</b>")
+        lines.insert(3, "")
     if result.get("published_time"):
-        lines.append(f"🗓 <b>Published:</b> {html.escape(result['published_time'])}")
+        lines.append(f"Released  <code>{html.escape(result['published_time'])}</code>")
     if result.get("size"):
-        lines.append(f"💾 <b>Size:</b> {html.escape(result['size'])}")
-    if result.get("md5") and result["md5"] != "N/A":
-        lines.append(f"🔑 <b>MD5:</b> <code>{html.escape(result['md5'])}</code>")
-    if result.get("expires_time"):
-        lines.append(f"⏳ <b>Link expiry:</b> {html.escape(result['expires_time'])}")
-    lines += ["", "Official package queried from the OPlus OTA service."]
+        lines.append(f"Size      <code>{html.escape(format_size(result['size']))}</code>")
+    lines += ["", "Official stock OTA"]
     return "\n".join(lines)
 
 
-def result_keyboard(result, v, region):
+def result_keyboard(result, v, region, generation=None):
     rows = []
     if result.get("link", "").startswith("http"):
-        rows.append([{"text": "⬇️ Download OTA", "url": result["link"]}])
+        rows.append([{"text": "Download OTA", "url": result["link"]}])
     if result.get("original_link", "").startswith("http") and result["original_link"] != result.get("link"):
-        rows.append([{"text": "🔗 Original OTA Gate", "url": result["original_link"]}])
-    rows.append([
-        button("🔄 Refresh", f"latest:{v}:{region}"),
-        button("🌍 Regions", f"regions:{v}"),
-    ])
-    rows.append([button("⬅️ Back", f"variant:{v}"), button("🏠 Home", "home:main")])
+        rows.append([{"text": "Original OTA", "url": result["original_link"]}])
+    refresh = f"generation_run:{v}:{generation}:{region}" if generation else f"latest:{v}:{region}"
+    rows.append([button("Refresh", refresh), button("Regions", f"regions:{v}")])
+    rows.append([button("Back", f"variant:{v}"), button("Home", "home:main")])
     return rows
 
 
