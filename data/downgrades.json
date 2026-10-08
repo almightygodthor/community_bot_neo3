@@ -13,6 +13,18 @@
         "region": "China",
         "version": "RMX3560_11_C_OTA_1240",
         "url": "https://rbp01.realme.net/GT_Neo3/UI4.0/RMX3560_11_C_OTA_1240_all_CDSeWu_CN.zip"
+      },
+      {
+        "title": "RUI 4 → RUI 3",
+        "region": "India",
+        "version": "RMX3561_11_A_OTA_0150",
+        "url": "https://download.c.realme.com/flash/Rollbackpack/realme_GT_Neo3/RMX3561_11_A_OTA_0150_all_96e7d9_IN.zip"
+      },
+      {
+        "title": "RUI 4 → RUI 3",
+        "region": "China",
+        "version": "RMX3560_11_A_OTA_0440",
+        "url": "https://rbp01.realme.net/GT_Neo3/RMX3560_11_A_OTA_0440_all_a1fa82_CN.zip"
       }
     ]
   },
@@ -30,6 +42,18 @@
         "region": "China",
         "version": "RMX3562_11_C_OTA_1240",
         "url": "https://rbp01.realme.net/GT_Neo3_150W/UI4.0/RMX3562_11_C_OTA_1240_all_0ypstj_CN.zip"
+      },
+      {
+        "title": "RUI 4 → RUI 3",
+        "region": "India",
+        "version": "RMX3563_11_A_OTA_0150",
+        "url": "https://download.c.realme.com/flash/Rollbackpack/realme_GT_Neo3_150W/RMX3563_11_A_OTA_0150_all_f6451c_-IN.zip"
+      },
+      {
+        "title": "RUI 4 → RUI 3",
+        "region": "China",
+        "version": "RMX3562_11_A_OTA_0440",
+        "url": "https://rbp01.realme.net/GT_Neo3_150W/RMX3562_11_A_OTA_0440_all_6875c4_CN.zip"
       }
     ]
   }
