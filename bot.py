@@ -253,7 +253,7 @@ def format_result(result, v, region, generation=None):
         f"└{border}┘",
     ])
 
-    return "<pre>" + "\n".join(lines) + "</pre>"
+    return "<pre>" + "\n".join(lines) + "</pre>\n\n<b>🚨 Contains preloader_raw.img</b>"
 
 
 def result_keyboard(result, v, region, generation=None):
