@@ -186,32 +186,74 @@ def format_size(value):
         return "N/A"
 
 
+def _box_line(text, width=30):
+    text = str(text)
+    if len(text) > width:
+        text = text[: max(0, width - 1)] + "…"
+    return f"│ {text.ljust(width)} │"
+
+
+def _box_wrapped(label, value, width=30):
+    import textwrap
+
+    value = str(value)
+    prefix = f"{label:<9}"
+    available = max(1, width - len(prefix))
+    chunks = textwrap.wrap(value, width=available, break_long_words=True, break_on_hyphens=False) or [""]
+    lines = [f"{prefix}{chunks[0]}"]
+    lines.extend(f"{'':9}{chunk}" for chunk in chunks[1:])
+    return [_box_line(line, width) for line in lines]
+
+
 def format_result(result, v, region, generation=None):
     x = VARIANTS[v]
     rname = dict(REGIONS[v]).get(region, region.upper())
-    lines = [
-        f"<b>{html.escape(x['name'])}</b>",
-        "──────────────",
-        f"{html.escape(rname)}",
-    ]
+    family = None
     if generation:
-        family = {"3": "RUI 3 • Android 12", "4": "RUI 4 • Android 13", "5": "RUI 5 • Android 14"}[generation]
-        lines.append(f"<b>{family}</b>")
-    lines += [
-        "",
-        "<b>Build</b>",
-        f"<code>{html.escape(result.get('ota_version', 'N/A'))}</code>",
-        "",
-        f"Software  <code>{html.escape(result.get('version', 'N/A'))}</code>",
-        f"Patch     <code>{html.escape(result.get('security_patch', 'N/A'))}</code>",
+        family = {
+            "3": "RUI 3 • Android 12",
+            "4": "RUI 4 • Android 13",
+            "5": "RUI 5 • Android 14",
+        }[generation]
+
+    build = result.get("ota_version", "N/A")
+    software = result.get("version", "N/A")
+    patch = result.get("security_patch", "N/A")
+    released = str(result.get("published_time", "N/A")).split(" ")[0]
+    size = format_size(result.get("size")) if result.get("size") else "N/A"
+
+    width = 30
+    border = "─" * (width + 2)
+    lines = [
+        f"┌{border}┐",
+        _box_line(x["name"], width),
+        f"├{border}┤",
+        _box_line(rname, width),
     ]
-    if result.get("published_time"):
-        released = str(result["published_time"]).split(" ")[0]
-        lines.append(f"Released  <code>{html.escape(released)}</code>")
-    if result.get("size"):
-        lines.append(f"Size      <code>{html.escape(format_size(result['size']))}</code>")
-    lines += ["", "Official stock OTA"]
-    return "\n".join(lines)
+
+    if family:
+        lines.append(_box_line(family, width))
+
+    lines.extend([
+        f"├{border}┤",
+        _box_line("BUILD", width),
+    ])
+    lines.extend(_box_wrapped("", build, width))
+
+    lines.extend([
+        f"├{border}┤",
+    ])
+    lines.extend(_box_wrapped("SOFTWARE", software, width))
+    lines.extend(_box_wrapped("PATCH", patch, width))
+    lines.extend(_box_wrapped("RELEASED", released, width))
+    lines.extend(_box_wrapped("SIZE", size, width))
+    lines.extend([
+        f"├{border}┤",
+        _box_line("OFFICIAL STOCK OTA", width),
+        f"└{border}┘",
+    ])
+
+    return "<pre>" + "\n".join(lines) + "</pre>"
 
 
 def result_keyboard(result, v, region, generation=None):
