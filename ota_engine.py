@@ -95,6 +95,22 @@ def _convert(result, v, region):
         "error": None,
     }
 
+RUI_FAMILIES = {
+    "3": {"name": "RUI 3", "android": "Android 12", "suffix": "A"},
+    "4": {"name": "RUI 4", "android": "Android 13", "suffix": "C"},
+    "5": {"name": "RUI 5", "android": "Android 14", "suffix": "F"},
+}
+
+def get_generation(v, region, generation):
+    mod = _load()
+    family = RUI_FAMILIES[generation]
+    try:
+        result = _query(mod, v, region, f"{VARIANTS[v]["model"]}_11.{family["suffix"]}")
+        item = _convert(result, v, region)
+        return item or {"error": f"No {family["name"]} package was returned for this region."}
+    except Exception as e:
+        return {"error": str(e)}
+
 def get_latest(v, region=None):
     mod = _load()
     regions = [region] if region else [r for r, _ in REGIONS[v]]
