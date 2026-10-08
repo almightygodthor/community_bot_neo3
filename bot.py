@@ -7,6 +7,7 @@ import logging
 import os
 import time
 import json
+import re
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -197,7 +198,9 @@ def format_result(result, v, region, generation=None):
             "5": "RUI 5 • Android 14",
         }[generation]
 
-    build = html.escape(str(result.get("ota_version", "N/A")))
+    raw_build = str(result.get("ota_version", "N/A"))
+    match = re.match(r"^(.*?_[A-Z]\\.\\d+)(?:_|$)", raw_build)
+    build = html.escape(match.group(1) if match else raw_build)
     software = html.escape(str(result.get("version", "N/A")))
     patch = html.escape(str(result.get("security_patch", "N/A")))
     released = html.escape(str(result.get("published_time", "N/A")).split(" ")[0])
