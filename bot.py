@@ -417,7 +417,8 @@ def handle_callback(q):
                 lines.append(f"\n<b>{title}</b>\n{region}\n<code>{version}</code>")
                 url = package.get("url", "")
                 if url.startswith("http"):
-                    rows.append([{"text": package.get("title", "Download"), "url": url}])
+                    button_text = f"{package.get('title', 'Download')} • {package.get('region', 'Unknown region')}"
+                    rows.append([{"text": button_text, "url": url}])
             if not packages:
                 lines = [
                     f"<b>Downgrade packages — {html.escape(VARIANTS[v]['name'])}</b>",
