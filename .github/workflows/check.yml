@@ -14,4 +14,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - run: python -m py_compile bot.py ota_engine.py
+      - run: python -m py_compile bot.py ota_engine.py tracker/tomboy_pro.py tracker/config.py
